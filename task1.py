@@ -61,6 +61,17 @@ class MLP(nn.Module):
             nn.Linear(64, 64),
             nn.ReLU(),
             nn.Linear(64, 1)
+class DeepCorrectorMLP(nn.Module):
+    def __init__(self, num_hidden_nodes):
+        super(DeepCorrectorMLP, self).__init__()
+        self.layers = nn.Sequential(
+            nn.Linear(4, num_hidden_nodes),
+            nn.ReLU(),
+            nn.Linear(num_hidden_nodes, num_hidden_nodes),
+            nn.ReLU(),
+            nn.Linear(num_hidden_nodes, num_hidden_nodes),
+            nn.ReLU(),
+            nn.Linear(num_hidden_nodes, 1)
         )
 
     def forward(self, x):
