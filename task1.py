@@ -61,15 +61,27 @@ class MLP(nn.Module):
             nn.ReLU(),
             nn.Linear(num_hidden_nodes, num_hidden_nodes),
             nn.ReLU(),
+            nn.Linear(64, 1))
+class DeepCorrectorMLP(nn.Module):
+    def __init__(self, num_hidden_nodes):
+        super(DeepCorrectorMLP, self).__init__()
+        self.layers = nn.Sequential(
+            nn.Linear(4, 64),
+            nn.ReLU(),
+            nn.Linear(64, num_hidden_nodes),
+            nn.ReLU(),
+            nn.Linear(num_hidden_nodes, num_hidden_nodes),
+            nn.ReLU(),
             nn.Linear(num_hidden_nodes, 1)
         )
 
     def forward(self, x):
         return self.layers(x)
 
+num_hidden_nodes = 32
 while num_hidden_nodes < 129:
     # Model, Loss, Optimizer
-    model = MLP()
+    model = DeepCorrectorMLP(num_hidden_nodes)
     criterion = nn.MSELoss()
     optimizer = optim.Adam(model.parameters(), lr=0.00001)
     
@@ -118,21 +130,21 @@ while num_hidden_nodes < 129:
         dot_q_test += ddot_q_corrected * dt
         q_test += dot_q_test * dt
         q_real_corrected.append(q_test)
-    
+
     plt.plot(np.linspace(1, epochs, epochs), np.log(train_losses), label='Log Training Loss')
     plt.xlabel('Epoch')
     plt.ylabel('Log(Loss)')
-    plt.title('Logarithmic Training Loss vs. Epochs')
+    plt.title('Deep Neural Network Logarithmic Training Loss vs. Epochs')
     plt.legend()
-    plt.savefig(f'Figures/task1.1/{num_hidden_nodes}-nodes-log-loss')
+    plt.savefig(f'Figures/task1.2/{num_hidden_nodes}-nodes-log-loss')
     plt.close()
     
     plt.plot(np.linspace(1, epochs, epochs), train_losses, label='Training Loss')
     plt.xlabel('Epoch')
     plt.ylabel('Loss')
-    plt.title('Training Loss vs. Epochs')
+    plt.title('Deep Neural Network Training Loss vs. Epochs')
     plt.legend()
-    plt.savefig(f'Figures/task1.1/{num_hidden_nodes}-nodes-loss')
+    plt.savefig(f'Figures/task1.2/{num_hidden_nodes}-nodes-loss')
     plt.close()
     
     # Plot results
@@ -140,10 +152,10 @@ while num_hidden_nodes < 129:
     plt.plot(t, q_target, 'r-', label='Target')
     plt.plot(t, q_real, 'b--', label='PD Only')
     plt.plot(t, q_real_corrected, 'g:', label='PD + MLP Correction')
-    plt.title(f'Trajectory Tracking with and without MLP Correction - {num_hidden_nodes} Nodes')
+    plt.title(f'Deep Neural Network Trajectory Tracking with and without MLP Correction - {num_hidden_nodes} Nodes')
     plt.xlabel('Time [s]')
     plt.ylabel('Position')
     plt.legend()
-    plt.savefig(f'Figures/task1.1/{num_hidden_nodes}-nodes')
+    plt.savefig(f'Figures/task1.2/{num_hidden_nodes}')
     plt.close()
     num_hidden_nodes += 32
