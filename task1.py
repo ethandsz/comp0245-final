@@ -52,78 +52,98 @@ dataset = TensorDataset(X_tensor, Y_tensor)
 train_loader = DataLoader(dataset, batch_size=32, shuffle=True)
 
 # MLP Model Definition
+num_hidden_nodes = 32
 class MLP(nn.Module):
     def __init__(self):
         super(MLP, self).__init__()
         self.layers = nn.Sequential(
-            nn.Linear(4, 64),
+            nn.Linear(4, num_hidden_nodes),
             nn.ReLU(),
-            nn.Linear(64, 64),
+            nn.Linear(num_hidden_nodes, num_hidden_nodes),
             nn.ReLU(),
-            nn.Linear(64, 1)
+            nn.Linear(num_hidden_nodes, 1)
         )
 
     def forward(self, x):
         return self.layers(x)
 
-# Model, Loss, Optimizer
-model = MLP()
-criterion = nn.MSELoss()
-optimizer = optim.Adam(model.parameters(), lr=0.00001)
-
-# Training Loop
-epochs = 1000
-train_losses = []
-
-
-for epoch in range(epochs):
-    epoch_loss = 0
-    for data, target in train_loader:
-        optimizer.zero_grad()
-        output = model(data)
-        loss = criterion(output, target)
-        loss.backward()
-        optimizer.step()
-
-    epoch_loss += loss.item()
-
-    train_losses.append(epoch_loss / len(train_loader))
-    print(f'Epoch {epoch+1}/{epochs}, Loss: {train_losses[-1]:.6f}')
-
-# Testing Phase: Simulate trajectory tracking
-q_test = 0
-dot_q_test = 0
-q_real = []
-q_real_corrected = []
-
-
-# integration with only PD Control
-for i in range(len(t)):
-    tau = k_p * (q_target[i] - q_test) + k_d * (dot_q_target[i] - dot_q_test)
-    ddot_q_real = (tau - b * dot_q_test) / m
-    dot_q_test += ddot_q_real * dt
-    q_test += dot_q_test * dt
-    q_real.append(q_test)
-
-q_test = 0
-dot_q_test = 0
-for i in range(len(t)):
-    # Apply MLP correction
-    tau = k_p * (q_target[i] - q_test) + k_d * (dot_q_target[i] - dot_q_test)
-    inputs = torch.tensor([q_test, dot_q_test, q_target[i], dot_q_target[i]], dtype=torch.float32)
-    correction = model(inputs.unsqueeze(0)).item()
-    ddot_q_corrected =(tau - b * dot_q_test + correction) / m
-    dot_q_test += ddot_q_corrected * dt
-    q_test += dot_q_test * dt
-    q_real_corrected.append(q_test)
-
-# Plot results
-plt.figure(figsize=(12, 6))
-plt.plot(t, q_target, 'r-', label='Target')
-plt.plot(t, q_real, 'b--', label='PD Only')
-plt.plot(t, q_real_corrected, 'g:', label='PD + MLP Correction')
-plt.title('Trajectory Tracking with and without MLP Correction')
-plt.xlabel('Time [s]')
-plt.ylabel('Position')
-plt.legend()
-plt.show()
+while num_hidden_nodes < 129:
+    # Model, Loss, Optimizer
+    model = MLP()
+    criterion = nn.MSELoss()
+    optimizer = optim.Adam(model.parameters(), lr=0.00001)
+    
+    # Training Loop
+    epochs = 1000
+    train_losses = []
+    
+    
+    for epoch in range(epochs):
+        epoch_loss = 0
+        for data, target in train_loader:
+            optimizer.zero_grad()
+            output = model(data)
+            loss = criterion(output, target)
+            loss.backward()
+            optimizer.step()
+    
+        epoch_loss += loss.item()
+    
+        train_losses.append(epoch_loss / len(train_loader))
+        print(f'Epoch {epoch+1}/{epochs}, Loss: {train_losses[-1]:.6f}')
+    
+    # Testing Phase: Simulate trajectory tracking
+    q_test = 0
+    dot_q_test = 0
+    q_real = []
+    q_real_corrected = []
+    
+    
+    # integration with only PD Control
+    for i in range(len(t)):
+        tau = k_p * (q_target[i] - q_test) + k_d * (dot_q_target[i] - dot_q_test)
+        ddot_q_real = (tau - b * dot_q_test) / m
+        dot_q_test += ddot_q_real * dt
+        q_test += dot_q_test * dt
+        q_real.append(q_test)
+    
+    q_test = 0
+    dot_q_test = 0
+    for i in range(len(t)):
+        # Apply MLP correction
+        tau = k_p * (q_target[i] - q_test) + k_d * (dot_q_target[i] - dot_q_test)
+        inputs = torch.tensor([q_test, dot_q_test, q_target[i], dot_q_target[i]], dtype=torch.float32)
+        correction = model(inputs.unsqueeze(0)).item()
+        ddot_q_corrected =(tau - b * dot_q_test + correction) / m
+        dot_q_test += ddot_q_corrected * dt
+        q_test += dot_q_test * dt
+        q_real_corrected.append(q_test)
+    
+    plt.plot(np.linspace(1, epochs, epochs), np.log(train_losses), label='Log Training Loss')
+    plt.xlabel('Epoch')
+    plt.ylabel('Log(Loss)')
+    plt.title('Logarithmic Training Loss vs. Epochs')
+    plt.legend()
+    plt.savefig(f'Figures/task1.1/{num_hidden_nodes}-nodes-log-loss')
+    plt.close()
+    
+    plt.plot(np.linspace(1, epochs, epochs), train_losses, label='Training Loss')
+    plt.xlabel('Epoch')
+    plt.ylabel('Loss')
+    plt.title('Training Loss vs. Epochs')
+    plt.legend()
+    plt.savefig(f'Figures/task1.1/{num_hidden_nodes}-nodes-loss')
+    plt.close()
+    
+    # Plot results
+    plt.figure(figsize=(12, 6))
+    plt.plot(t, q_target, 'r-', label='Target')
+    plt.plot(t, q_real, 'b--', label='PD Only')
+    plt.plot(t, q_real_corrected, 'g:', label='PD + MLP Correction')
+    plt.title(f'Trajectory Tracking with and without MLP Correction - {num_hidden_nodes} Nodes')
+    plt.xlabel('Time [s]')
+    plt.ylabel('Position')
+    plt.legend()
+    plt.savefig(f'Figures/task1.1/{num_hidden_nodes}-nodes')
+    plt.close()
+    num_hidden_nodes += 32
