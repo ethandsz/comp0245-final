@@ -52,13 +52,14 @@ dataset = TensorDataset(X_tensor, Y_tensor)
 train_loader = DataLoader(dataset, batch_size=32, shuffle=True)
 
 # MLP Model Definition
+num_hidden_nodes = 32
 class MLP(nn.Module):
     def __init__(self):
         super(MLP, self).__init__()
         self.layers = nn.Sequential(
-            nn.Linear(4, 64),
+            nn.Linear(4, num_hidden_nodes),
             nn.ReLU(),
-            nn.Linear(64, 64),
+            nn.Linear(num_hidden_nodes, num_hidden_nodes),
             nn.ReLU(),
             nn.Linear(64, 1))
 class DeepCorrectorMLP(nn.Module):
