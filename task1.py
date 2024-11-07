@@ -54,20 +54,20 @@ q = 0
 dot_q = 0
 X = []
 Y = []
-train_losses_32_nodes = []
-train_losses_64_nodes = []
-train_losses_96_nodes = []
-train_losses_128_nodes = []
+train_losses_batchsize_64 = []
+train_losses_batchsize_128 = []
+train_losses_batchsize_256 = []
+train_losses_batchsize_1000 = []
 
-q_real_32 = []
-q_real_64 = []
-q_real_96 = []
-q_real_128 = []
+q_real_batchsize_64 = []
+q_real_batchsize_128 = []
+q_real_batchsize_256 = []
+q_real_batchsize_1000 = []
 
-q_real_corrected_32 = []
-q_real_corrected_64 = []
-q_real_corrected_96 = []
-q_real_corrected_128 = []
+q_real_corrected_batchsize_64 = []
+q_real_corrected_batchsize_128 = []
+q_real_corrected_batchsize_256 = []
+q_real_corrected_batchsize_1000 = []
 epochs = 1000
 batch_sizes = [64, 128, 256, 1000]
 for batchsize in batch_sizes:    
@@ -149,23 +149,24 @@ for batchsize in batch_sizes:
         dot_q_test += ddot_q_corrected * dt
         q_test += dot_q_test * dt
         q_real_corrected.append(q_test)
+# batch_sizes = [64, 128, 256, 1000]
 
-        if(num_hidden_nodes == 32):
-            train_losses_32_nodes = train_losses
-            q_real_32 = q_real
-            q_real_corrected_32 = q_real_corrected
-        elif(num_hidden_nodes == 64):
-            train_losses_64_nodes = train_losses
-            q_real_64 = q_real
-            q_real_corrected_64 = q_real_corrected
-        elif(num_hidden_nodes == 96):
-            train_losses_96_nodes = train_losses
-            q_real_96 = q_real
-            q_real_corrected_96 = q_real_corrected
-        elif(num_hidden_nodes == 128):
-            train_losses_128_nodes = train_losses
-            q_real_128 = q_real
-            q_real_corrected_128 = q_real_corrected
+        if(batchsize == 64):
+            train_losses_batchsize_64 = train_losses
+            q_real_batchsize_64 = q_real
+            q_real_corrected_batchsize_64 = q_real_corrected
+        elif(batchsize == 128):
+            train_losses_batchsize_128 = train_losses
+            q_real_batchsize_128 = q_real
+            q_real_corrected_batchsize_128 = q_real_corrected
+        elif(batchsize == 256):
+            train_losses_batchsize_256 = train_losses
+            q_real_batchsize_256 = q_real
+            q_real_corrected_batchsize_256 = q_real_corrected
+        elif(batchsize == 1000):
+            train_losses_batchsize_1000 = train_losses
+            q_real_batchsize_1000 = q_real
+            q_real_corrected_batchsize_1000 = q_real_corrected
             
     plt.plot(np.linspace(1, epochs, epochs), np.log(train_losses), label='Log Training Loss')
     plt.xlabel('Epoch')
@@ -173,7 +174,7 @@ for batchsize in batch_sizes:
     plt.title(f'Deep Neural Network Logarithmic Training Loss vs. Epochs')
     plt.legend()
     plt.tight_layout()
-    plt.savefig(f'Figures/task1.4/Deep-network-log-loss-batch-size-{batchsize}-training-time-{total_training_time:.2f}.png')
+  #  plt.savefig(f'Figures/task1.4/Deep-network-log-loss-batch-size-{batchsize}-training-time-{total_training_time:.2f}.png')
     plt.close()
     
     plt.plot(np.linspace(1, epochs, epochs), train_losses, label='Training Loss')
@@ -182,7 +183,7 @@ for batchsize in batch_sizes:
     plt.title(f'Deep Neural Network Training Loss vs. Epochs')
     plt.legend()
     plt.tight_layout()
-    plt.savefig(f'Figures/task1.4/Deep-network-loss-batch-size-{batchsize}-training-time-{total_training_time:.2f}.png')
+    #plt.savefig(f'Figures/task1.4/Deep-network-loss-batch-size-{batchsize}-training-time-{total_training_time:.2f}.png')
     plt.close()
     
     # Plot results
@@ -195,5 +196,5 @@ for batchsize in batch_sizes:
     plt.ylabel('Position')
     plt.legend()
     plt.tight_layout()
-    plt.savefig(f'Figures/task1.4/Deep-network-batch-size-{batchsize}-training-time-{total_training_time:.2f}.png')
+   # plt.savefig(f'Figures/task1.4/Deep-network-batch-size-{batchsize}-training-time-{total_training_time:.2f}.png')
     plt.close()
