@@ -115,8 +115,7 @@ for batchsize in batch_sizes:
             loss = criterion(output, target)
             loss.backward()
             optimizer.step()
-    
-        epoch_loss += loss.item()
+            epoch_loss += loss.item()
     
         train_losses.append(epoch_loss / len(train_loader))
         print(f'Epoch {epoch+1}/{epochs}, Loss: {train_losses[-1]:.6f}')
@@ -206,7 +205,6 @@ plt.plot(np.linspace(1, epochs, epochs), train_losses_batchsize_1000, label='Tra
 plt.xlabel('Epoch')
 plt.ylabel('Loss')
 plt.title('Training Loss vs. Epochs')
-plt.ylim([0,20])
 plt.legend(loc='upper right')
 plt.savefig(f'Figures/task1.4/Shallow Network/Training_Loss')
 plt.show()
