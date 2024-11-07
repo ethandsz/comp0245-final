@@ -80,83 +80,118 @@ class DeepCorrectorMLP(nn.Module):
         return self.layers(x)
 
 learning_rates = [1, 1e-1, 1e-2, 1e-3, 1e-4]
-for lr in learning_rates:
-    # Model, Loss, Optimizer
-    model = DeepCorrectorMLP(num_hidden_nodes = 128)
-    # model = MLP()
-    criterion = nn.MSELoss()
-    optimizer = optim.Adam(model.parameters(), lr=lr)
-    
-    # Training Loop
-    epochs = 1000
-    train_losses = []
-    
-    
-    for epoch in range(epochs):
-        epoch_loss = 0
-        for data, target in train_loader:
-            optimizer.zero_grad()
-            output = model(data)
-            loss = criterion(output, target)
-            loss.backward()
-            optimizer.step()
-    
-        epoch_loss += loss.item()
-    
-        train_losses.append(epoch_loss / len(train_loader))
-        print(f'Epoch {epoch+1}/{epochs}, Loss: {train_losses[-1]:.6f}')
-    
-    # Testing Phase: Simulate trajectory tracking
-    q_test = 0
-    dot_q_test = 0
-    q_real = []
-    q_real_corrected = []
-    
-    
-    # integration with only PD Control
-    for i in range(len(t)):
-        tau = k_p * (q_target[i] - q_test) + k_d * (dot_q_target[i] - dot_q_test)
-        ddot_q_real = (tau - b * dot_q_test) / m
-        dot_q_test += ddot_q_real * dt
-        q_test += dot_q_test * dt
-        q_real.append(q_test)
-    
-    q_test = 0
-    dot_q_test = 0
-    for i in range(len(t)):
-        # Apply MLP correction
-        tau = k_p * (q_target[i] - q_test) + k_d * (dot_q_target[i] - dot_q_test)
-        inputs = torch.tensor([q_test, dot_q_test, q_target[i], dot_q_target[i]], dtype=torch.float32)
-        correction = model(inputs.unsqueeze(0)).item()
-        ddot_q_corrected =(tau - b * dot_q_test + correction) / m
-        dot_q_test += ddot_q_corrected * dt
-        q_test += dot_q_test * dt
-        q_real_corrected.append(q_test)
+num_hidden_nodes = 32
+train_losses_32_nodes = []
+train_losses_64_nodes = []
+train_losses_96_nodes = []
+train_losses_128_nodes = []
 
-    plt.plot(np.linspace(1, epochs, epochs), np.log(train_losses), label='Log Training Loss')
-    plt.xlabel('Epoch')
-    plt.ylabel('Log(Loss)')
-    plt.title('Deep Neural Network Logarithmic Training Loss vs. Epochs')
-    plt.legend()
-    plt.savefig(f'Figures/task1.3/Deep-network-128-nodes-log-loss-lr={lr}.png')
-    plt.close()
-    
-    plt.plot(np.linspace(1, epochs, epochs), train_losses, label='Training Loss')
-    plt.xlabel('Epoch')
-    plt.ylabel('Loss')
-    plt.title('Deep Neural Network Training Loss vs. Epochs')
-    plt.legend()
-    plt.savefig(f'Figures/task1.3/Deep-network-128-nodes-loss-lr={lr}.png')
-    plt.close()
-    
-    # Plot results
-    plt.figure(figsize=(12, 6))
-    plt.plot(t, q_target, 'r-', label='Target')
-    plt.plot(t, q_real, 'b--', label='PD Only')
-    plt.plot(t, q_real_corrected, 'g:', label='PD + MLP Correction')
-    plt.title(f'Deep Neural Network Trajectory Tracking with and without MLP Correction - 128 Nodes - {lr} Learning rate')
-    plt.xlabel('Time [s]')
-    plt.ylabel('Position')
-    plt.legend()
-    plt.savefig(f'Figures/task1.3/Deep-network-128-nodes-lr={lr}.png')
-    plt.close()
+q_real_32 = []
+q_real_64 = []
+q_real_96 = []
+q_real_128 = []
+
+q_real_corrected_32 = []
+q_real_corrected_64 = []
+q_real_corrected_96 = []
+q_real_corrected_128 = []
+epochs = 1000
+
+for lr in learning_rates:
+
+    while num_hidden_nodes < 129:
+        # Model, Loss, Optimizer
+        model = DeepCorrectorMLP(num_hidden_nodes = 128)
+        # model = MLP()
+        criterion = nn.MSELoss()
+        optimizer = optim.Adam(model.parameters(), lr=lr)
+        
+        # Training Loop
+        train_losses = []
+        
+        
+        for epoch in range(epochs):
+            epoch_loss = 0
+            for data, target in train_loader:
+                optimizer.zero_grad()
+                output = model(data)
+                loss = criterion(output, target)
+                loss.backward()
+                optimizer.step()
+        
+            epoch_loss += loss.item()
+        
+            train_losses.append(epoch_loss / len(train_loader))
+            print(f'Epoch {epoch+1}/{epochs}, Loss: {train_losses[-1]:.6f}')
+        
+        # Testing Phase: Simulate trajectory tracking
+        q_test = 0
+        dot_q_test = 0
+        q_real = []
+        q_real_corrected = []
+        
+        
+        # integration with only PD Control
+        for i in range(len(t)):
+            tau = k_p * (q_target[i] - q_test) + k_d * (dot_q_target[i] - dot_q_test)
+            ddot_q_real = (tau - b * dot_q_test) / m
+            dot_q_test += ddot_q_real * dt
+            q_test += dot_q_test * dt
+            q_real.append(q_test)
+        
+        q_test = 0
+        dot_q_test = 0
+        for i in range(len(t)):
+            # Apply MLP correction
+            tau = k_p * (q_target[i] - q_test) + k_d * (dot_q_target[i] - dot_q_test)
+            inputs = torch.tensor([q_test, dot_q_test, q_target[i], dot_q_target[i]], dtype=torch.float32)
+            correction = model(inputs.unsqueeze(0)).item()
+            ddot_q_corrected =(tau - b * dot_q_test + correction) / m
+            dot_q_test += ddot_q_corrected * dt
+            q_test += dot_q_test * dt
+            q_real_corrected.append(q_test)
+
+            if(num_hidden_nodes == 32):
+                train_losses_32_nodes = train_losses
+                q_real_32 = q_real
+                q_real_corrected_32 = q_real_corrected
+            elif(num_hidden_nodes == 64):
+                train_losses_64_nodes = train_losses
+                q_real_64 = q_real
+                q_real_corrected_64 = q_real_corrected
+            elif(num_hidden_nodes == 96):
+                train_losses_96_nodes = train_losses
+                q_real_96 = q_real
+                q_real_corrected_96 = q_real_corrected
+            elif(num_hidden_nodes == 128):
+                train_losses_128_nodes = train_losses
+                q_real_128 = q_real
+                q_real_corrected_128 = q_real_corrected
+                
+        plt.plot(np.linspace(1, epochs, epochs), np.log(train_losses), label='Log Training Loss')
+        plt.xlabel('Epoch')
+        plt.ylabel('Log(Loss)')
+        plt.title('Deep Neural Network Logarithmic Training Loss vs. Epochs')
+        plt.legend()
+        plt.savefig(f'Figures/task1.3/Deep-network-128-nodes-log-loss-lr={lr}.png')
+        plt.close()
+        
+        plt.plot(np.linspace(1, epochs, epochs), train_losses, label='Training Loss')
+        plt.xlabel('Epoch')
+        plt.ylabel('Loss')
+        plt.title('Deep Neural Network Training Loss vs. Epochs')
+        plt.legend()
+        plt.savefig(f'Figures/task1.3/Deep-network-128-nodes-loss-lr={lr}.png')
+        plt.close()
+        
+        # Plot results
+        plt.figure(figsize=(12, 6))
+        plt.plot(t, q_target, 'r-', label='Target')
+        plt.plot(t, q_real, 'b--', label='PD Only')
+        plt.plot(t, q_real_corrected, 'g:', label='PD + MLP Correction')
+        plt.title(f'Deep Neural Network Trajectory Tracking with and without MLP Correction - 128 Nodes - {lr} Learning rate')
+        plt.xlabel('Time [s]')
+        plt.ylabel('Position')
+        plt.legend()
+        plt.savefig(f'Figures/task1.3/Deep-network-128-nodes-lr={lr}.png')
+        plt.close()
