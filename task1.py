@@ -54,7 +54,21 @@ q = 0
 dot_q = 0
 X = []
 Y = []
+train_losses_batchsize_64 = []
+train_losses_batchsize_128 = []
+train_losses_batchsize_256 = []
+train_losses_batchsize_1000 = []
 
+q_real_batchsize_64 = []
+q_real_batchsize_128 = []
+q_real_batchsize_256 = []
+q_real_batchsize_1000 = []
+
+q_real_corrected_batchsize_64 = []
+q_real_corrected_batchsize_128 = []
+q_real_corrected_batchsize_256 = []
+q_real_corrected_batchsize_1000 = []
+epochs = 1000
 batch_sizes = [64, 128, 256, 1000]
 for batchsize in batch_sizes:    
     for i in range(num_samples):
@@ -91,7 +105,6 @@ for batchsize in batch_sizes:
     optimizer = optim.Adam(model.parameters(), lr=0.00001)
     
     # Training Loop
-    epochs = 1000
     train_losses = []
     start_time = time.time()
     for epoch in range(epochs):
@@ -136,14 +149,32 @@ for batchsize in batch_sizes:
         dot_q_test += ddot_q_corrected * dt
         q_test += dot_q_test * dt
         q_real_corrected.append(q_test)
-    
+# batch_sizes = [64, 128, 256, 1000]
+
+        if(batchsize == 64):
+            train_losses_batchsize_64 = train_losses
+            q_real_batchsize_64 = q_real
+            q_real_corrected_batchsize_64 = q_real_corrected
+        elif(batchsize == 128):
+            train_losses_batchsize_128 = train_losses
+            q_real_batchsize_128 = q_real
+            q_real_corrected_batchsize_128 = q_real_corrected
+        elif(batchsize == 256):
+            train_losses_batchsize_256 = train_losses
+            q_real_batchsize_256 = q_real
+            q_real_corrected_batchsize_256 = q_real_corrected
+        elif(batchsize == 1000):
+            train_losses_batchsize_1000 = train_losses
+            q_real_batchsize_1000 = q_real
+            q_real_corrected_batchsize_1000 = q_real_corrected
+            
     plt.plot(np.linspace(1, epochs, epochs), np.log(train_losses), label='Log Training Loss')
     plt.xlabel('Epoch')
     plt.ylabel('Log(Loss)')
     plt.title(f'Deep Neural Network Logarithmic Training Loss vs. Epochs')
     plt.legend()
     plt.tight_layout()
-    plt.savefig(f'Figures/task1.4/Deep-network-log-loss-batch-size-{batchsize}-training-time-{total_training_time:.2f}.png')
+  #  plt.savefig(f'Figures/task1.4/Deep-network-log-loss-batch-size-{batchsize}-training-time-{total_training_time:.2f}.png')
     plt.close()
     
     plt.plot(np.linspace(1, epochs, epochs), train_losses, label='Training Loss')
@@ -152,7 +183,7 @@ for batchsize in batch_sizes:
     plt.title(f'Deep Neural Network Training Loss vs. Epochs')
     plt.legend()
     plt.tight_layout()
-    plt.savefig(f'Figures/task1.4/Deep-network-loss-batch-size-{batchsize}-training-time-{total_training_time:.2f}.png')
+    #plt.savefig(f'Figures/task1.4/Deep-network-loss-batch-size-{batchsize}-training-time-{total_training_time:.2f}.png')
     plt.close()
     
     # Plot results
@@ -164,6 +195,73 @@ for batchsize in batch_sizes:
     plt.xlabel('Time [s]')
     plt.ylabel('Position')
     plt.legend()
+   # plt.savefig(f'Figures/task1.4/Deep-network-batch-size-{batchsize}-training-time-{total_training_time:.2f}.png')
     plt.tight_layout()
-    plt.savefig(f'Figures/task1.4/Deep-network-batch-size-{batchsize}-training-time-{total_training_time:.2f}.png')
     plt.close()
+
+
+plt.plot(np.linspace(1, epochs, epochs), train_losses_batchsize_64, label='Training Loss of Batch Size of 64')
+plt.plot(np.linspace(1, epochs, epochs), train_losses_batchsize_128, label='Training Loss of Batch Size of 128')
+plt.plot(np.linspace(1, epochs, epochs), train_losses_batchsize_256, label='Training Loss of Batch Size of 256')
+plt.plot(np.linspace(1, epochs, epochs), train_losses_batchsize_1000, label='Training Loss of Batch Size of 1000')
+plt.xlabel('Epoch')
+plt.ylabel('Loss')
+plt.title('Training Loss vs. Epochs')
+plt.legend()
+plt.savefig(f'Figures/task1.4/Training_Loss')
+plt.show()
+
+# Plot results
+# plt.figure(figsize=(12, 6))
+# 
+# # Target
+# plt.plot(t, q_target, color='red', linestyle='-', label='Target')
+# 
+# # 32 Nodes
+# plt.plot(t, q_real_batchsize_64, color='blue', linestyle='--', label='PD Only on 32 Nodes')
+# plt.plot(t, q_real_corrected_batchsize_64, color='blue', linestyle=':', label='PD + MLP Correction on 32 Nodes')
+# 
+# # 64 Nodes
+# plt.plot(t, q_real_batchsize_128, color='purple', linestyle='--', label='PD Only on 64 Nodes')
+# plt.plot(t, q_real_corrected_batchsize_128, color='purple', linestyle=':', label='PD + MLP Correction on 64 Nodes')
+# 
+# # 96 Nodes
+# plt.plot(t, q_real_batchsize_256, color='orange', linestyle='--', label='PD Only on 96 Nodes')
+# plt.plot(t, q_real_corrected_batchsize_256, color='orange', linestyle=':', label='PD + MLP Correction on 96 Nodes')
+# 
+# # 128 Nodes
+# plt.plot(t, q_real_batchsize_1000, color='green', linestyle='--', label='PD Only on 128 Nodes')
+# plt.plot(t, q_real_corrected_batchsize_1000, color='green', linestyle=':', label='PD + MLP Correction on 128 Nodes')
+# 
+# # Add title, labels, and legend
+# plt.title('Trajectory Tracking with and without MLP Correction')
+# plt.xlabel('Time [s]')
+# plt.ylabel('Position')
+# plt.legend(loc='best')
+# 
+# # Save and show plot
+# plt.savefig('Figures/task1.4/Trajectory_Tracking.png')
+# plt.show()
+
+# Assume we already have the loss arrays for each configuration
+# Each list contains training losses per epoch for a specific node configuration
+losses_all_batches = [
+    train_losses_batchsize_64,
+    train_losses_batchsize_128,
+    train_losses_batchsize_256,
+    train_losses_batchsize_1000
+]
+
+# Convert the list of lists to a NumPy array for easier handling
+losses_all_batches = np.array(losses_all_batches)
+
+# Plot the heatmap of training losses
+plt.figure(figsize=(10, 6))
+plt.imshow(losses_all_batches, aspect='auto', cmap='viridis')
+plt.colorbar(label='Training Loss')
+plt.xlabel("Epoch")
+plt.ylabel("Batch Size Configuration")
+plt.title("Training Loss Heatmap Across Batch Size Configurations and Epochs")
+plt.yticks([0, 1, 2, 3], ['Batch Size 64', 'Batch Size 128', 'Batch Size 256', 'Batch Size 1000'])
+plt.savefig('Figures/task1.4/Training_Loss_Heatmap.png')
+plt.show()
