@@ -104,7 +104,6 @@ while num_hidden_nodes < 129:
     # Training Loop
     train_losses = []
     
-    
     for epoch in range(epochs):
         epoch_loss = 0
         for data, target in train_loader:
@@ -191,3 +190,71 @@ while num_hidden_nodes < 129:
     plt.savefig(f'Figures/task1.2/{num_hidden_nodes}')
     plt.close()
     num_hidden_nodes += 32
+
+
+plt.plot(np.linspace(1, epochs, epochs), train_losses_32_nodes, label='Training Loss of 32 Nodes')
+plt.plot(np.linspace(1, epochs, epochs), train_losses_64_nodes, label='Training Loss of 64 Nodes')
+plt.plot(np.linspace(1, epochs, epochs), train_losses_96_nodes, label='Training Loss of 96 Nodes')
+plt.plot(np.linspace(1, epochs, epochs), train_losses_128_nodes, label='Training Loss of 128 Nodes')
+plt.xlabel('Epoch')
+plt.ylabel('Loss')
+plt.title('Training Loss vs. Epochs')
+plt.legend()
+plt.savefig(f'Figures/task1.1/Training_Loss')
+plt.show()
+
+# Plot results
+plt.figure(figsize=(12, 6))
+plt.figure(figsize=(12, 6))
+
+# Target
+plt.plot(t, q_target, color='red', linestyle='-', label='Target')
+
+# 32 Nodes
+plt.plot(t, q_real_32, color='blue', linestyle='--', label='PD Only on 32 Nodes')
+plt.plot(t, q_real_corrected_32, color='blue', linestyle=':', label='PD + MLP Correction on 32 Nodes')
+
+# 64 Nodes
+plt.plot(t, q_real_64, color='purple', linestyle='--', label='PD Only on 64 Nodes')
+plt.plot(t, q_real_corrected_64, color='purple', linestyle=':', label='PD + MLP Correction on 64 Nodes')
+
+# 96 Nodes
+plt.plot(t, q_real_96, color='orange', linestyle='--', label='PD Only on 96 Nodes')
+plt.plot(t, q_real_corrected_96, color='orange', linestyle=':', label='PD + MLP Correction on 96 Nodes')
+
+# 128 Nodes
+plt.plot(t, q_real_128, color='green', linestyle='--', label='PD Only on 128 Nodes')
+plt.plot(t, q_real_corrected_128, color='green', linestyle=':', label='PD + MLP Correction on 128 Nodes')
+
+# Add title, labels, and legend
+plt.title('Trajectory Tracking with and without MLP Correction')
+plt.xlabel('Time [s]')
+plt.ylabel('Position')
+plt.legend(loc='best')
+
+# Save and show plot
+plt.savefig('Figures/task1.1/Trajectory_Tracking.png')
+plt.show()
+
+# Assume we already have the loss arrays for each configuration
+# Each list contains training losses per epoch for a specific node configuration
+losses_all_nodes = [
+    train_losses_32_nodes,
+    train_losses_64_nodes,
+    train_losses_96_nodes,
+    train_losses_128_nodes
+]
+
+# Convert the list of lists to a NumPy array for easier handling
+losses_all_nodes = np.array(losses_all_nodes)
+
+# Plot the heatmap of training losses
+plt.figure(figsize=(10, 6))
+plt.imshow(losses_all_nodes, aspect='auto', cmap='viridis')
+plt.colorbar(label='Training Loss')
+plt.xlabel("Epoch")
+plt.ylabel("Node Configuration")
+plt.title("Training Loss Heatmap Across Node Configurations and Epochs")
+plt.yticks([0, 1, 2, 3], ['32 Nodes', '64 Nodes', '96 Nodes', '128 Nodes'])
+plt.savefig('Figures/task1.1/Training_Loss_Heatmap.png')
+plt.show()
