@@ -67,6 +67,22 @@ class MLP(nn.Module):
     def forward(self, x):
         return self.layers(x)
 
+train_losses_32_nodes = []
+train_losses_64_nodes = []
+train_losses_96_nodes = []
+train_losses_128_nodes = []
+
+q_real_32 = []
+q_real_64 = []
+q_real_96 = []
+q_real_128 = []
+
+q_real_corrected_32 = []
+q_real_corrected_64 = []
+q_real_corrected_96 = []
+q_real_corrected_128 = []
+epochs = 1000
+
 while num_hidden_nodes < 129:
     # Model, Loss, Optimizer
     model = MLP()
@@ -74,7 +90,6 @@ while num_hidden_nodes < 129:
     optimizer = optim.Adam(model.parameters(), lr=0.00001)
     
     # Training Loop
-    epochs = 1000
     train_losses = []
     
     
@@ -118,7 +133,24 @@ while num_hidden_nodes < 129:
         dot_q_test += ddot_q_corrected * dt
         q_test += dot_q_test * dt
         q_real_corrected.append(q_test)
-    
+
+        if(num_hidden_nodes == 32):
+            train_losses_32_nodes = train_losses
+            q_real_32 = q_real
+            q_real_corrected_32 = q_real_corrected
+        elif(num_hidden_nodes == 64):
+            train_losses_64_nodes = train_losses
+            q_real_64 = q_real
+            q_real_corrected_64 = q_real_corrected
+        elif(num_hidden_nodes == 96):
+            train_losses_96_nodes = train_losses
+            q_real_96 = q_real
+            q_real_corrected_96 = q_real_corrected
+        elif(num_hidden_nodes == 128):
+            train_losses_128_nodes = train_losses
+            q_real_128 = q_real
+            q_real_corrected_128 = q_real_corrected
+            
     plt.plot(np.linspace(1, epochs, epochs), np.log(train_losses), label='Log Training Loss')
     plt.xlabel('Epoch')
     plt.ylabel('Log(Loss)')
