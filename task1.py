@@ -167,7 +167,7 @@ while num_hidden_nodes < 129:
     plt.ylabel('Log(Loss)')
     plt.title('Deep Neural Network Logarithmic Training Loss vs. Epochs')
     plt.legend()
-    plt.savefig(f'Figures/task1.2/{num_hidden_nodes}-nodes-log-loss')
+    #plt.savefig(f'Figures/task1.2/{num_hidden_nodes}-nodes-log-loss')
     plt.close()
     
     plt.plot(np.linspace(1, epochs, epochs), train_losses, label='Training Loss')
@@ -175,7 +175,7 @@ while num_hidden_nodes < 129:
     plt.ylabel('Loss')
     plt.title('Deep Neural Network Training Loss vs. Epochs')
     plt.legend()
-    plt.savefig(f'Figures/task1.2/{num_hidden_nodes}-nodes-loss')
+    #plt.savefig(f'Figures/task1.2/{num_hidden_nodes}-nodes-loss')
     plt.close()
     
     # Plot results
@@ -187,7 +187,7 @@ while num_hidden_nodes < 129:
     plt.xlabel('Time [s]')
     plt.ylabel('Position')
     plt.legend()
-    plt.savefig(f'Figures/task1.2/{num_hidden_nodes}')
+    #plt.savefig(f'Figures/task1.2/{num_hidden_nodes}')
     plt.close()
     num_hidden_nodes += 32
 
@@ -198,9 +198,9 @@ plt.plot(np.linspace(1, epochs, epochs), train_losses_96_nodes, label='Training 
 plt.plot(np.linspace(1, epochs, epochs), train_losses_128_nodes, label='Training Loss of 128 Nodes')
 plt.xlabel('Epoch')
 plt.ylabel('Loss')
-plt.title('Training Loss vs. Epochs')
+plt.title('Deep Network - Training Loss vs. Epochs')
 plt.legend()
-plt.savefig(f'Figures/task1.1/Training_Loss')
+plt.savefig(f'Figures/task1.2/Training_Loss')
 plt.show()
 
 # Plot results
@@ -227,13 +227,13 @@ plt.plot(t, q_real_128, color='green', linestyle='--', label='PD Only on 128 Nod
 plt.plot(t, q_real_corrected_128, color='green', linestyle=':', label='PD + MLP Correction on 128 Nodes')
 
 # Add title, labels, and legend
-plt.title('Trajectory Tracking with and without MLP Correction')
+plt.title('Deep Network - Trajectory Tracking with and without MLP Correction')
 plt.xlabel('Time [s]')
 plt.ylabel('Position')
 plt.legend(loc='best')
 
 # Save and show plot
-plt.savefig('Figures/task1.1/Trajectory_Tracking.png')
+plt.savefig('Figures/task1.2/Trajectory_Tracking.png')
 plt.show()
 
 # Assume we already have the loss arrays for each configuration
@@ -254,7 +254,7 @@ plt.imshow(losses_all_nodes, aspect='auto', cmap='viridis')
 plt.colorbar(label='Training Loss')
 plt.xlabel("Epoch")
 plt.ylabel("Node Configuration")
-plt.title("Training Loss Heatmap Across Node Configurations and Epochs")
+plt.title("Deep Network - Training Loss Heatmap Across Node Configurations and Epochs")
 plt.yticks([0, 1, 2, 3], ['32 Nodes', '64 Nodes', '96 Nodes', '128 Nodes'])
-plt.savefig('Figures/task1.1/Training_Loss_Heatmap.png')
+plt.savefig('Figures/task1.2/Training_Loss_Heatmap.png')
 plt.show()
