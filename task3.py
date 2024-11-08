@@ -120,6 +120,7 @@ def main():
 
         # Initialize the simulation
         sim.ResetPose()
+        sim.pybullet_client.resetBasePositionAndOrientation(1, goal_position, sim.pybullet_client.getQuaternionFromEuler([0, 0, 0]))
         current_time = 0  # Initialize current time
 
         # Create test input features
