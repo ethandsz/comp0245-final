@@ -9,9 +9,11 @@ import torch.nn as nn
 import torch
 from sklearn.ensemble import RandomForestRegressor
 import joblib  # For saving and loading models
+from PIL import Image
+
 
 # Set the model type: "neural_network" or "random_forest"
-neural_network_or_random_forest = "neural_network"  # Change to "random_forest" to use Random Forest models
+neural_network_or_random_forest = "random_forest"  # Change to "random_forest" to use Random Forest models
 
 # MLP Model Definition
 class MLP(nn.Module):
@@ -120,8 +122,10 @@ def main():
 
         # Initialize the simulation
         sim.ResetPose()
+        sim.pybullet_client.resetBasePositionAndOrientation(1, goal_position, sim.pybullet_client.getQuaternionFromEuler([0, 0, 0]))
+        
         current_time = 0  # Initialize current time
-
+    
         # Create test input features
         test_goal_positions = np.tile(goal_position, (len(test_time_array), 1))  # Shape: (num_points, 3)
         test_input = np.hstack((test_time_array.reshape(-1, 1), test_goal_positions))  # Shape: (num_points, 4)
@@ -151,6 +155,8 @@ def main():
         
         q_mes_all = []
         q_des_all = []
+        
+        qd_mes_all = []
         # Data collection loop
         while current_time < test_time_array.max():
             # Measure current state
@@ -186,6 +192,7 @@ def main():
             
             q_mes_all.append(q_mes)
             q_des_all.append(q_des)
+            qd_mes_all.append(qd_mes)
 
         # After the trajectory, compute the final cartesian position
         final_predicted_joint_positions = predicted_joint_positions_over_time[-1, :]  # Shape: (7,)
@@ -197,6 +204,9 @@ def main():
         
         q_mes_all = np.array(q_mes_all)
         q_des_all = np.array(q_des_all)
+        qd_mes_all = np.array(qd_mes_all)
+        qd_des_over_time = np.array(qd_des_over_time)
+        qd_des_over_time_clipped = np.array(qd_des_over_time_clipped)
 
         desired_cartesian_positions_over_time = []
         measured_cartesian_positions_over_time = []
@@ -244,6 +254,70 @@ def main():
             except:
                 print("Directory doesnt exist, most likely need to add extra test folders.")
             plt.close()
+
+
+            fig, axs = plt.subplots(2, 1, figsize=(10, 12))  # 2 rows, 1 column
+
+            # 1. Plot Measured vs Desired Positions in the first subplot
+            axs[0].plot(test_time_array[3:-1], qd_mes_all[3:, joint_idx], label="Measured Velocity", color="blue", linestyle='-', linewidth=2)
+            axs[0].plot(test_time_array[3:-1], qd_des_over_time[3:-1, joint_idx], label="Desired Velocity", color="green", linestyle='--', linewidth=2)
+            axs[0].set_title(f"Comparison of Measured and Desired Velocity Over Time for Joint {joint_idx + 1}", fontsize=16)
+            axs[0].set_xlabel("Time (s)", fontsize=14)
+            axs[0].set_ylabel("Velocity (m/s)", fontsize=14)
+            axs[0].grid(True, linestyle="--", alpha=0.7)
+            axs[0].legend(fontsize=12)
+
+            # 2. Plot Squared Loss in the second subplot
+            squared_loss = (qd_des_over_time[3:-1, joint_idx] - qd_mes_all[3:, joint_idx]) ** 2
+            axs[1].plot(test_time_array[3:-1], squared_loss, label="Squared Loss", color="purple", linestyle='--', linewidth=2)
+            axs[1].set_title("Squared Loss Between Desired and Measured Velocities Over Time", fontsize=16)
+            axs[1].set_xlabel("Time (s)", fontsize=14)
+            axs[1].set_ylabel("Loss", fontsize=14)
+            axs[1].grid(True, linestyle="--", alpha=0.7)
+            axs[1].legend(fontsize=12)
+
+            # Adjust layout to avoid overlap
+            plt.tight_layout()
+            save_path = f"Figures/task3.2/{'Neural Network' if neural_network_or_random_forest == 'neural_network' else 'Random Forest'}/Test {goal_positions.index(goal_position) + 1}/Joint {joint_idx + 1}/velocities_comparison_and_loss"
+            try:
+                plt.savefig(save_path, dpi=300, bbox_inches="tight")
+            except:
+                print("Directory doesnt exist, most likely need to add extra test folders.")
+            plt.close()
+
+
+        # Set the camera position a little further away to capture the full area
+        camera_distance = 1.0  # Adjust distance based on field of view and bounds
+        camera_eye_position = [goal_position[0], goal_position[1] - camera_distance, goal_position[2] + 0.5]
+        camera_target_position = goal_position  # Focus on the center of the bounds
+
+
+
+        view_matrix = sim.pybullet_client.computeViewMatrix(
+            cameraEyePosition=camera_eye_position,
+            cameraTargetPosition=camera_target_position,
+            cameraUpVector=[0, 0, 1]
+        )
+        # Define camera parameters
+        width, height = 640, 480
+        fov = 60  # Field of view
+        aspect = width / height
+        near = 0.1  # Near clipping plane
+        far = 10.0  # Far clipping plane
+        projection_matrix = sim.pybullet_client.computeProjectionMatrixFOV(
+            fov=fov,
+            aspect=aspect,
+            nearVal=near,
+            farVal=far
+        )
+
+        # Capture the image
+        image = sim.pybullet_client.getCameraImage(width, height, view_matrix, projection_matrix)
+        rgb_array = np.array(image[2])[:, :, :3]  # Extract the RGB data
+
+        # Convert to an image and save
+        screenshot = Image.fromarray(rgb_array)
+        screenshot.save(f"Figures/task3.2/{'Neural Network' if neural_network_or_random_forest == 'neural_network' else 'Random Forest'}/Test {goal_positions.index(goal_position) + 1}/end_position_screenshot.png")
 
 
 
