@@ -11,7 +11,7 @@ from sklearn.ensemble import RandomForestRegressor
 import joblib  # For saving and loading models
 
 # Set the model type: "neural_network" or "random_forest"
-neural_network_or_random_forest = "random_forest"  # Change to "random_forest" to use Random Forest models
+neural_network_or_random_forest = "neural_network"  # Change to "random_forest" to use Random Forest models
 
 # MLP Model Definition
 class MLP(nn.Module):
@@ -70,7 +70,7 @@ def main():
         'z': (0.12, 0.12)
     }
     # Create a set of goal positions
-    number_of_goal_positions_to_test = 1
+    number_of_goal_positions_to_test = 5
     goal_positions = []
     for i in range(number_of_goal_positions_to_test):
         goal_positions.append([
@@ -215,57 +215,55 @@ def main():
         measured_cartesian_positions_over_time = np.array(measured_cartesian_positions_over_time)
 
         for joint_idx in range(7):
-            plt.figure(figsize=(10, 6))
             
-            # Plot measured and desired values with labels and styles
-            plt.plot(test_time_array[3:-1], q_mes_all[3:, joint_idx], label="Measured Position", color="blue", linestyle='-', linewidth=2)
-            plt.plot(test_time_array[3:-1], q_des_all[3:, joint_idx], label="Desired Position", color="red", linestyle='--', linewidth=2)
-            # Title and labels
-            plt.title(f"Comparison of Measured and Desired Positions Over Time For Joint {joint_idx + 1}", fontsize=16)
-            plt.xlabel("Time (s)", fontsize=14)
-            plt.ylabel("Position", fontsize=14)
+            fig, axs = plt.subplots(2, 1, figsize=(10, 12))  # 2 rows, 1 column
             
-            # Grid, legend, and display
-            plt.grid(True, linestyle="--", alpha=0.7)
-            plt.legend(fontsize=12)
-            plt.tight_layout()  # Adjust layout to prevent clipping
+            # 1. Plot Measured vs Desired Positions in the first subplot
+            axs[0].plot(test_time_array[3:-1], q_mes_all[3:, joint_idx], label="Measured Position", color="blue", linestyle='-', linewidth=2)
+            axs[0].plot(test_time_array[3:-1], q_des_all[3:, joint_idx], label="Desired Position", color="red", linestyle='--', linewidth=2)
+            axs[0].set_title(f"Comparison of Measured and Desired Positions Over Time for Joint {joint_idx + 1}", fontsize=16)
+            axs[0].set_xlabel("Time (s)", fontsize=14)
+            axs[0].set_ylabel("Position (m)", fontsize=14)
+            axs[0].grid(True, linestyle="--", alpha=0.7)
+            axs[0].legend(fontsize=12)
             
-            plt.show()
-            
-
+            # 2. Plot Squared Loss in the second subplot
             squared_loss = (q_des_all[3:, joint_idx] - q_mes_all[3:, joint_idx]) ** 2
-            plt.plot(test_time_array[3:-1], squared_loss, label="Squared Loss", color="purple", linestyle='--', linewidth=2)
-
-            # Title and labels
-            plt.title("Loss Between Desired and Measured Positions Over Time", fontsize=16)
-            plt.xlabel("Time (s)", fontsize=14)
-            plt.ylabel("Loss", fontsize=14)
+            axs[1].plot(test_time_array[3:-1], squared_loss, label="Squared Loss", color="purple", linestyle='--', linewidth=2)
+            axs[1].set_title("Squared Loss Between Desired and Measured Positions Over Time", fontsize=16)
+            axs[1].set_xlabel("Time (s)", fontsize=14)
+            axs[1].set_ylabel("Loss", fontsize=14)
+            axs[1].grid(True, linestyle="--", alpha=0.7)
+            axs[1].legend(fontsize=12)
             
-            # Grid, legend, and display
-            plt.grid(True, linestyle="--", alpha=0.7)
-            plt.legend(fontsize=12)
-            plt.tight_layout()  # Adjust layout to prevent clipping
-            
-            plt.show()
+            # Adjust layout to avoid overlap
+            plt.tight_layout()
+            save_path = f"Figures/task3.2/{'Neural Network' if neural_network_or_random_forest == 'neural_network' else 'Random Forest'}/Test {goal_positions.index(goal_position) + 1}/Joint {joint_idx + 1}/position_comparison_and_loss"
+            try:
+                plt.savefig(save_path, dpi=300, bbox_inches="tight")
+            except:
+                print("Directory doesnt exist, most likely need to add extra test folders.")
+            plt.close()
 
 
 
         fig = plt.figure()
         ax = fig.add_subplot(111, projection='3d')
-        ax.plot(desired_cartesian_positions_over_time[:, 0], desired_cartesian_positions_over_time[:, 1], desired_cartesian_positions_over_time[:, 2], label='Desired Trajectory')
-        ax.plot(measured_cartesian_positions_over_time[:, 0], measured_cartesian_positions_over_time[:, 1], measured_cartesian_positions_over_time[:, 2], label='Measured Trajectory for Random Forest')
-        ax.scatter(goal_position[0], goal_position[1], goal_position[2], color='red', label='Goal Position')
+        ax.plot(desired_cartesian_positions_over_time[3:, 0], desired_cartesian_positions_over_time[3:, 1], desired_cartesian_positions_over_time[3:, 2], label='Desired Trajectory')
+        ax.plot(measured_cartesian_positions_over_time[3:, 0], measured_cartesian_positions_over_time[3:, 1], measured_cartesian_positions_over_time[3:, 2], label=f"Measured Trajectory for {'Neural Network' if neural_network_or_random_forest == 'neural_network' else 'Random Forest'}")
+        ax.scatter(goal_position[0], goal_position[1], goal_position[2], color='red', label=f'Goal: ({goal_position[0]:.3f}, {goal_position[1]:.3f}, {goal_position[2]:.3f})')
+        ax.scatter(measured_cartesian_positions_over_time[-1, 0], measured_cartesian_positions_over_time[-1, 1], measured_cartesian_positions_over_time[-1, 2], color='green', label=f"End:  ({measured_cartesian_positions_over_time[-1, 0]:.3f}, {measured_cartesian_positions_over_time[-1, 1]:.3f}, {measured_cartesian_positions_over_time[-1, 2]:.3f})")
         ax.set_xlabel('X Position (m)')
         ax.set_ylabel('Y Position (m)')
         ax.set_zlabel('Z Position (m)')
         ax.set_title('Predicted Cartesian Trajectory')
-        plt.legend()
-        save_path = f"Figures/task3.2"
-        # try:
-        #     plt.savefig(save_path, dpi=300, bbox_inches="tight")
-        # except:
-        #     print("Directory doesnt exist, most likely need to add extra test folders.")
-        plt.show()
+        plt.legend(loc=9)
+        save_path = f"Figures/task3.2/{'Neural Network' if neural_network_or_random_forest == 'neural_network' else 'Random Forest'}/Test {goal_positions.index(goal_position) + 1}/Cartesian_Trajectory_Pred_vs_Actual"
+        try:
+            plt.savefig(save_path, dpi=300, bbox_inches="tight")
+        except:
+            print("Directory doesnt exist, most likely need to add extra test folders.")
+        plt.close()
 
 if __name__ == '__main__':
     main()
