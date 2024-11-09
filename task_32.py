@@ -250,7 +250,7 @@ def main():
             plt.tight_layout()
             save_path = f"Figures/task3.2/{'Neural Network' if neural_network_or_random_forest == 'neural_network' else 'Random Forest'}/Test {goal_positions.index(goal_position) + 1}/Joint {joint_idx + 1}/position_comparison_and_loss"
             try:
-                plt.savefig(save_path, dpi=300, bbox_inches="tight")
+                plt.savefig(save_path, dpi=300)
             except:
                 print("Directory doesnt exist, most likely need to add extra test folders.")
             plt.close()
@@ -280,7 +280,7 @@ def main():
             plt.tight_layout()
             save_path = f"Figures/task3.2/{'Neural Network' if neural_network_or_random_forest == 'neural_network' else 'Random Forest'}/Test {goal_positions.index(goal_position) + 1}/Joint {joint_idx + 1}/velocities_comparison_and_loss"
             try:
-                plt.savefig(save_path, dpi=300, bbox_inches="tight")
+                plt.savefig(save_path, dpi=300)
             except:
                 print("Directory doesnt exist, most likely need to add extra test folders.")
             plt.close()
@@ -334,7 +334,7 @@ def main():
         plt.legend(loc=9)
         save_path = f"Figures/task3.2/{'Neural Network' if neural_network_or_random_forest == 'neural_network' else 'Random Forest'}/Test {goal_positions.index(goal_position) + 1}/Cartesian_Trajectory_Pred_vs_Actual"
         try:
-            plt.savefig(save_path, dpi=300, bbox_inches="tight")
+            plt.savefig(save_path, dpi=300)
         except:
             print("Directory doesnt exist, most likely need to add extra test folders.")
         plt.close()
