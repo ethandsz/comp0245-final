@@ -11,7 +11,7 @@ from sklearn.ensemble import RandomForestRegressor
 import joblib  # For saving and loading models
 
 # Set the model type: "neural_network" or "random_forest"
-neural_network_or_random_forest = "neural_network" #"neural_network"  # Change to "random_forest" to use Random Forest models
+#neural_network_or_random_forest = "neural_network" #"neural_network"  # Change to "random_forest" to use Random Forest models
 
 # MLP Model Definition
 class MLP(nn.Module):
@@ -153,7 +153,7 @@ def main():
                 plt.figure(figsize=(10, 6))
 
                 # Plot settings
-                plt.plot(test_time_array, predicted_joint_positions_over_time[:, joint_idx], color="blue", linewidth=2)
+                plt.plot(test_time_array[5:], predicted_joint_positions_over_time[5:, joint_idx], color="blue", linewidth=2)
                 plt.title(f"Predicted Joint Position for Joint {joint_idx+1}", fontsize=16)
                 plt.xlabel("Time (s)", fontsize=14)
                 plt.ylabel("Position (m)", fontsize=14)
@@ -209,9 +209,9 @@ def main():
 
             # Plot x, y, z positions over time
             plt.figure(figsize=(10, 5))
-            plt.plot(test_time_array, cartesian_positions_over_time[:, 0], label='X Position')
-            plt.plot(test_time_array, cartesian_positions_over_time[:, 1], label='Y Position')
-            plt.plot(test_time_array, cartesian_positions_over_time[:, 2], label='Z Position')
+            plt.plot(test_time_array[5:], cartesian_positions_over_time[5:, 0], label='X Position')
+            plt.plot(test_time_array[5:], cartesian_positions_over_time[5:, 1], label='Y Position')
+            plt.plot(test_time_array[5:], cartesian_positions_over_time[5:, 2], label='Z Position')
             plt.xlabel('Time (s)')
             plt.ylabel('Cartesian Position (m)')
             plt.title('Predicted Cartesian Positions Over Time')
@@ -245,13 +245,14 @@ def main():
             from mpl_toolkits.mplot3d import Axes3D
             fig = plt.figure()
             ax = fig.add_subplot(111, projection='3d')
-            ax.plot(cartesian_positions_over_time[:, 0], cartesian_positions_over_time[:, 1], cartesian_positions_over_time[:, 2], label='Predicted Trajectory')
-            ax.scatter(goal_position[0], goal_position[1], goal_position[2], color='red', label='Goal Position')
+            ax.plot(cartesian_positions_over_time[5:, 0], cartesian_positions_over_time[5:, 1], cartesian_positions_over_time[5:, 2], label='Predicted Trajectory')
+            ax.scatter(goal_position[0], goal_position[1], goal_position[2], color='red', label=f'Goal: ({goal_position[0]:.3f}, {goal_position[1]:.3f}, {goal_position[2]:.3f})')
+            ax.scatter(cartesian_positions_over_time[-1, 0], cartesian_positions_over_time[-1, 1], cartesian_positions_over_time[-1, 2], color='green', label=f"End: ({cartesian_positions_over_time[-1, 0]:.3f}, {cartesian_positions_over_time[-1, 1]:.3f}, {cartesian_positions_over_time[-1, 2]:.3f})")
             ax.set_xlabel('X Position (m)')
             ax.set_ylabel('Y Position (m)')
             ax.set_zlabel('Z Position (m)')
             ax.set_title('Predicted Cartesian Trajectory')
-            plt.legend()
+            plt.legend(loc=9)
             save_path = f"Figures/task3.1/{'Neural Network' if neural_network_or_random_forest == 'neural_network' else 'Random Forest'}/Test {goal_positions.index(goal_position) + 1}/Predictions/Cartesian Positions/3D-graph.png"
             try:
                 plt.savefig(save_path, dpi=300, bbox_inches="tight")
@@ -319,12 +320,12 @@ def main():
         # Plot x, y, z positions over time
         i = goal_positions.index(goal_position)
         plt.figure(figsize=(10, 5))
-        plt.plot(test_time_array, predicted_cartesian_for_nn[goal_positions.index(goal_position)][:, 0], label='NN X Position')
-        plt.plot(test_time_array, predicted_cartesian_for_nn[goal_positions.index(goal_position)][:, 1], label='NN Y Position')
-        plt.plot(test_time_array, predicted_cartesian_for_nn[i][:, 2], label='NN Z Position')
-        plt.plot(test_time_array, predicted_cartesian_for_rf[i][:, 0], label='RF X Position')
-        plt.plot(test_time_array, predicted_cartesian_for_rf[i][:, 1], label='RF Y Position')
-        plt.plot(test_time_array, predicted_cartesian_for_rf[i][:, 2], label='RF Z Position')
+        plt.plot(test_time_array[5:], predicted_cartesian_for_nn[goal_positions.index(goal_position)][5:, 0], label='NN X Position')
+        plt.plot(test_time_array[5:], predicted_cartesian_for_nn[goal_positions.index(goal_position)][5:, 1], label='NN Y Position')
+        plt.plot(test_time_array[5:], predicted_cartesian_for_nn[i][5:, 2], label='NN Z Position')
+        plt.plot(test_time_array[5:], predicted_cartesian_for_rf[i][5:, 0], label='RF X Position')
+        plt.plot(test_time_array[5:], predicted_cartesian_for_rf[i][5:, 1], label='RF Y Position')
+        plt.plot(test_time_array[5:], predicted_cartesian_for_rf[i][5:, 2], label='RF Z Position')
 
         plt.xlabel('Time (s)')
         plt.ylabel('Cartesian Position (m)')
@@ -361,14 +362,16 @@ def main():
 
         fig = plt.figure()
         ax = fig.add_subplot(111, projection='3d')
-        ax.plot(predicted_cartesian_for_nn[i][:, 0], predicted_cartesian_for_nn[i][:, 1], predicted_cartesian_for_nn[i][:, 2], label='Predicted Trajectory for Neural Network')
-        ax.plot(predicted_cartesian_for_rf[i][:, 0], predicted_cartesian_for_rf[i][:, 1], predicted_cartesian_for_rf[i][:, 2], label='Predicted Trajectory for Random Forest')
-        ax.scatter(goal_position[0], goal_position[1], goal_position[2], color='red', label='Goal Position')
+        ax.plot(predicted_cartesian_for_nn[i][5:, 0], predicted_cartesian_for_nn[i][5:, 1], predicted_cartesian_for_nn[i][5:, 2], label='Predicted Trajectory for Neural Network')
+        ax.plot(predicted_cartesian_for_rf[i][5:, 0], predicted_cartesian_for_rf[i][5:, 1], predicted_cartesian_for_rf[i][5:, 2], label='Predicted Trajectory for Random Forest')
+        ax.scatter(goal_position[0], goal_position[1], goal_position[2], color='red', label=f'Goal: ({goal_position[0]:.3f}, {goal_position[1]:.3f}, {goal_position[2]:.3f})')
+        ax.scatter(predicted_cartesian_for_nn[i][-1, 0], predicted_cartesian_for_nn[i][-1, 1], predicted_cartesian_for_nn[i][-1, 2], color='green', label=f"Neural Network End: ({predicted_cartesian_for_nn[i][-1, 0]:.3f}, {predicted_cartesian_for_nn[i][-1, 1]:.3f}, {predicted_cartesian_for_nn[i][-1, 2]:.3f})")
+        ax.scatter(predicted_cartesian_for_rf[i][-1, 0], predicted_cartesian_for_rf[i][-1, 1], predicted_cartesian_for_rf[i][-1, 2], color='green', label=f"Random Forest End: ({predicted_cartesian_for_rf[i][-1, 0]:.3f}, {predicted_cartesian_for_rf[i][-1, 1]:.3f}, {predicted_cartesian_for_rf[i][-1, 2]:.3f})")
         ax.set_xlabel('X Position (m)')
         ax.set_ylabel('Y Position (m)')
         ax.set_zlabel('Z Position (m)')
         ax.set_title('Predicted Cartesian Trajectory')
-        plt.legend()
+        plt.legend(loc=9)
         save_path = f"Figures/task3.1/Comparison Graphs/Test {i + 1}/3D-graph.png"
         try:
             plt.savefig(save_path, dpi=300, bbox_inches="tight")
