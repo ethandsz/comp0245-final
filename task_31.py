@@ -162,7 +162,7 @@ def main():
                 # Save each plot as an image file
                 save_path = f"Figures/task3.1/{'Neural Network' if neural_network_or_random_forest == 'neural_network' else 'Random Forest'}/Test {goal_positions.index(goal_position) + 1}/Predictions/Joint {joint_idx+1}/position_over_time.png"
                 try:
-                    plt.savefig(save_path, dpi=300, bbox_inches="tight")
+                    plt.savefig(save_path, dpi=300)
                 except:
                     print("Directory doesnt exist, most likely need to add extra test folders.")
                 plt.close()
@@ -180,7 +180,7 @@ def main():
                 # Save each plot as an image file
                 save_path = f"Figures/task3.1/{'Neural Network' if neural_network_or_random_forest == 'neural_network' else 'Random Forest'}/Test {goal_positions.index(goal_position) + 1}/Predictions/Joint {joint_idx+1}/velocity_over_time.png"
                 try:
-                    plt.savefig(save_path, dpi=300, bbox_inches="tight")
+                    plt.savefig(save_path, dpi=300)
                 except:
                     print("Directory doesnt exist, most likely need to add extra test folders.")
                 plt.close()
@@ -219,7 +219,7 @@ def main():
             plt.grid(True)
             save_path = f"Figures/task3.1/{'Neural Network' if neural_network_or_random_forest == 'neural_network' else 'Random Forest'}/Test {goal_positions.index(goal_position) + 1}/Predictions/Cartesian Positions/2D-graph.png"
             try:
-                plt.savefig(save_path, dpi=300, bbox_inches="tight")
+                plt.savefig(save_path, dpi=300)
             except:
                 print("Directory doesnt exist, most likely need to add extra test folders.")
             plt.close()
@@ -236,7 +236,7 @@ def main():
             plt.grid(True)
             save_path = f"Figures/task3.1/{'Neural Network' if neural_network_or_random_forest == 'neural_network' else 'Random Forest'}/Test {goal_positions.index(goal_position) + 1}/Predictions/Cartesian Positions/2D-graph-velocities.png"
             try:
-                plt.savefig(save_path, dpi=300, bbox_inches="tight")
+                plt.savefig(save_path, dpi=300)
             except:
                 print("Directory doesnt exist, most likely need to add extra test folders.")
             plt.close()
@@ -255,7 +255,7 @@ def main():
             plt.legend(loc=9)
             save_path = f"Figures/task3.1/{'Neural Network' if neural_network_or_random_forest == 'neural_network' else 'Random Forest'}/Test {goal_positions.index(goal_position) + 1}/Predictions/Cartesian Positions/3D-graph.png"
             try:
-                plt.savefig(save_path, dpi=300, bbox_inches="tight")
+                plt.savefig(save_path, dpi=300)
             except:
                 print("Directory doesnt exist, most likely need to add extra test folders.")
             plt.close()
@@ -334,7 +334,7 @@ def main():
         plt.grid(True)
         save_path = f"Figures/task3.1/Comparison Graphs/Test {i + 1}/2D-graph.png"
         try:
-            plt.savefig(save_path, dpi=300, bbox_inches="tight")
+            plt.savefig(save_path, dpi=300)
         except:
             print("Directory doesnt exist, most likely need to add extra test folders.")
         plt.show()
@@ -354,7 +354,7 @@ def main():
         plt.grid(True)
         save_path = f"Figures/task3.1/Comparison Graphs/Test {i + 1}/2D-graph-velocities.png"
         try:
-            plt.savefig(save_path, dpi=300, bbox_inches="tight")
+            plt.savefig(save_path, dpi=300)
         except:
             print("Directory doesnt exist, most likely need to add extra test folders.")
         plt.show()
@@ -374,7 +374,7 @@ def main():
         plt.legend(loc=9)
         save_path = f"Figures/task3.1/Comparison Graphs/Test {i + 1}/3D-graph.png"
         try:
-            plt.savefig(save_path, dpi=300, bbox_inches="tight")
+            plt.savefig(save_path, dpi=300)
         except:
             print("Directory doesnt exist, most likely need to add extra test folders.")
         plt.show()
