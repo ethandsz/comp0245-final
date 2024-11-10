@@ -198,19 +198,16 @@ plt.figure(figsize=(12, 6))
 plt.plot(t, q_target, color='red', linestyle='-', label='Target')
 
 # 32 Nodes
-plt.plot(t, q_real_32, color='blue', linestyle='--', label='PD Only on 32 Nodes')
+plt.plot(t, q_real_32, color='yellow', linestyle='--', label='PD Only')
 plt.plot(t, q_real_corrected_32, color='blue', linestyle=':', label='PD + MLP Correction on 32 Nodes')
 
 # 64 Nodes
-plt.plot(t, q_real_64, color='purple', linestyle='--', label='PD Only on 64 Nodes')
 plt.plot(t, q_real_corrected_64, color='purple', linestyle=':', label='PD + MLP Correction on 64 Nodes')
 
 # 96 Nodes
-plt.plot(t, q_real_96, color='orange', linestyle='--', label='PD Only on 96 Nodes')
 plt.plot(t, q_real_corrected_96, color='orange', linestyle=':', label='PD + MLP Correction on 96 Nodes')
 
 # 128 Nodes
-plt.plot(t, q_real_128, color='green', linestyle='--', label='PD Only on 128 Nodes')
 plt.plot(t, q_real_corrected_128, color='green', linestyle=':', label='PD + MLP Correction on 128 Nodes')
 
 # Add title, labels, and legend
