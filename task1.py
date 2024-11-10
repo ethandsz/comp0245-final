@@ -99,8 +99,8 @@ for batchsize in batch_sizes:
     train_loader = DataLoader(dataset, batch_size=batchsize, shuffle=True)
     
     # Model, Loss, Optimizer
-    model = DeepCorrectorMLP(num_hidden_nodes = 32)
-    # model = MLP()
+    # model = DeepCorrectorMLP(num_hidden_nodes = 32)
+    model = MLP()
     criterion = nn.MSELoss()
     optimizer = optim.Adam(model.parameters(), lr=0.00001)
     
@@ -205,8 +205,8 @@ plt.plot(np.linspace(1, epochs, epochs), train_losses_batchsize_1000, label='Tra
 plt.xlabel('Epoch')
 plt.ylabel('Loss')
 plt.title('Training Loss vs. Epochs')
-plt.legend(loc='upper right')
-plt.savefig(f'Figures/task1.4/Deep Network/Training_Loss')
+plt.legend(loc='lower left')
+plt.savefig(f'Figures/task1.4/Shallow Network/Training_Loss')
 plt.show()
 
 
@@ -262,5 +262,5 @@ plt.xlabel("Epoch")
 plt.ylabel("Batch Size Configuration")
 plt.title("Training Loss Heatmap Across Batch Size Configurations and Epochs")
 plt.yticks([0, 1, 2, 3], ['Batch Size 64', 'Batch Size 128', 'Batch Size 256', 'Batch Size 1000'])
-plt.savefig('Figures/task1.4/Deep Network/Training_Loss_Heatmap.png')
+plt.savefig('Figures/task1.4/Shallow Network/Training_Loss_Heatmap.png')
 plt.show()
