@@ -17,7 +17,7 @@ import pandas as pd
 
 # Set the model type: "neural_network" or "random_forest"
 neural_network_or_random_forest = "random_forest"  # Change to "random_forest" to use Random Forest models
-depth = 10
+depth = 2
 
 # MLP Model Definition
 class MLP(nn.Module):
@@ -61,7 +61,7 @@ def plot_velocities(time, velocities, original, method, test_num):
         except:
             print("Directory doesnt exist, most likely need to add extra test folders.")
 
-    plt.close()
+        plt.close()
 
 def main():
     # Load the saved data
@@ -150,7 +150,7 @@ def main():
     time_step = sim.GetTimeStep()
     # Generate test time array
     test_time_array = np.arange(time_array.min(), time_array.max(), time_step)
-    smoothing_tests = ["Gaussian Filter", "EMA","original"]
+    smoothing_tests = ["Gaussian Filter", "EMA", "Original"]
     end_position_losses = pd.DataFrame(columns=smoothing_tests)
 
     for goal_position in goal_positions:
@@ -186,7 +186,7 @@ def main():
                     predictions = models[joint_idx].predict(test_input)  # Shape: (num_points,)
     
                 # Store the predicted joint positions
-                predicted_joint_positions_over_time[:, joint_idx] = predictions
+                predicted_joint_positions_over_time[3:, joint_idx] = predictions[3:]
     
             # Compute qd_des_over_time by numerically differentiating the predicted joint positions
             qd_des_over_time = np.gradient(predicted_joint_positions_over_time, axis=0, edge_order=2) / time_step
@@ -208,7 +208,7 @@ def main():
                     # Compute EMA for each time step
                     for t in range(1, predicted_joint_positions_over_time.shape[0]):
                         ema[t] = alpha * predicted_joint_positions_over_time[t, joint_idx] + (1 - alpha) * ema[t-1]
-                
+                    
                     plt.plot(test_time_array[:], ema, label="EMA")
                     plt.plot(test_time_array, predicted_joint_positions_over_time[:,joint_idx], label="Original Position")
                     plt.title(f"Joint {joint_idx + 1}: Original vs. Smoothed ({smoothing_test})")
