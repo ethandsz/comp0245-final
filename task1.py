@@ -70,42 +70,44 @@ q_real_corrected_batchsize_256 = []
 q_real_corrected_batchsize_1000 = []
 epochs = 1000
 batch_sizes = [64, 128, 256, 1000]
-for batchsize in batch_sizes:    
-    for i in range(num_samples):
-        # PD control output
-        tau = k_p * (q_target[i] - q) + k_d * (dot_q_target[i] - dot_q)
-        # Ideal motor dynamics (variable mass for realism)
-        #m_real = m * (1 + 0.1 * np.random.randn())  # Mass varies by +/-10%
-        ddot_q_real = (tau - b * dot_q) / m
-        
-        # Calculate error
-        ddot_q_ideal = (tau) / m
-        ddot_q_error = ddot_q_ideal - ddot_q_real
-        
-        # Store data
-        X.append([q, dot_q, q_target[i], dot_q_target[i]])
-        Y.append(ddot_q_error)
-        
-        # Update state
-        dot_q += ddot_q_real * dt
-        q += dot_q * dt
-    
+for i in range(num_samples):
+    # PD control output
+    tau = k_p * (q_target[i] - q) + k_d * (dot_q_target[i] - dot_q)
+    # Ideal motor dynamics (variable mass for realism)
+    #m_real = m * (1 + 0.1 * np.random.randn())  # Mass varies by +/-10%
+    ddot_q_real = (tau - b * dot_q) / m
+
+    # Calculate error
+    ddot_q_ideal = (tau) / m
+    ddot_q_error = ddot_q_ideal - ddot_q_real
+
+    # Store data
+    X.append([q, dot_q, q_target[i], dot_q_target[i]])
+    Y.append(ddot_q_error)
+
+    # Update state
+    dot_q += ddot_q_real * dt
+    q += dot_q * dt
+
     # Convert data for PyTorch
-    X_tensor = torch.tensor(X, dtype=torch.float32)
-    Y_tensor = torch.tensor(Y, dtype=torch.float32).view(-1, 1)
-    
+X_tensor = torch.tensor(X, dtype=torch.float32)
+Y_tensor = torch.tensor(Y, dtype=torch.float32).view(-1, 1)
+
+for batchsize in batch_sizes:
+
     # Dataset and DataLoader
     dataset = TensorDataset(X_tensor, Y_tensor)
     train_loader = DataLoader(dataset, batch_size=batchsize, shuffle=True)
     
     # Model, Loss, Optimizer
-    # model = DeepCorrectorMLP(num_hidden_nodes = 32)
-    model = MLP()
+    model = DeepCorrectorMLP(num_hidden_nodes = 32)
+    # model = MLP()
     criterion = nn.MSELoss()
     optimizer = optim.Adam(model.parameters(), lr=0.00001)
     
     # Training Loop
     train_losses = []
+    print("Start Time now")
     start_time = time.time()
     for epoch in range(epochs):
         epoch_loss = 0
@@ -118,9 +120,11 @@ for batchsize in batch_sizes:
             epoch_loss += loss.item()
     
         train_losses.append(epoch_loss / len(train_loader))
-        print(f'Epoch {epoch+1}/{epochs}, Loss: {train_losses[-1]:.6f}')
+        #print(f'Epoch {epoch+1}/{epochs}, Loss: {train_losses[-1]:.6f}')
     end_time = time.time()
+    print("End now")
     total_training_time = end_time - start_time
+    print("Total: ", total_training_time)
     
     # Testing Phase: Simulate trajectory tracking
     q_test = 0
@@ -173,7 +177,7 @@ for batchsize in batch_sizes:
     plt.title(f'Deep Neural Network Logarithmic Training Loss vs. Epochs')
     plt.legend()
     plt.tight_layout()
-  #  plt.savefig(f'Figures/task1.4/Deep-network-log-loss-batch-size-{batchsize}-training-time-{total_training_time:.2f}.png')
+    plt.savefig(f'Figures/task1.4/Deep Network/Batch Size {batchsize}/Deep-network-log-loss-batch-size-{batchsize}-training-time-{total_training_time:.2f}.png')
     plt.close()
     
     plt.plot(np.linspace(1, epochs, epochs), train_losses, label='Training Loss')
@@ -182,7 +186,7 @@ for batchsize in batch_sizes:
     plt.title(f'Deep Neural Network Training Loss vs. Epochs')
     plt.legend()
     plt.tight_layout()
-    #plt.savefig(f'Figures/task1.4/Deep-network-loss-batch-size-{batchsize}-training-time-{total_training_time:.2f}.png')
+    plt.savefig(f'Figures/task1.4/Deep Network/Batch Size {batchsize}/Deep-network-loss-batch-size-{batchsize}-training-time-{total_training_time:.2f}.png')
     plt.close()
     
     # Plot results
@@ -194,7 +198,7 @@ for batchsize in batch_sizes:
     plt.xlabel('Time [s]')
     plt.ylabel('Position')
     plt.legend()
-   # plt.savefig(f'Figures/task1.4/Deep-network-batch-size-{batchsize}-training-time-{total_training_time:.2f}.png')
+    plt.savefig(f'Figures/task1.4/Deep Network/Batch Size {batchsize}/Deep-network-batch-size-{batchsize}-training-time-{total_training_time:.2f}.png')
     plt.tight_layout()
     plt.close()
 
@@ -206,7 +210,7 @@ plt.xlabel('Epoch')
 plt.ylabel('Loss')
 plt.title('Training Loss vs. Epochs')
 plt.legend(loc='lower left')
-plt.savefig(f'Figures/task1.4/Shallow Network/Training_Loss')
+plt.savefig(f'Figures/task1.4/Deep Network/Training_Loss')
 plt.show()
 
 
@@ -262,5 +266,5 @@ plt.xlabel("Epoch")
 plt.ylabel("Batch Size Configuration")
 plt.title("Training Loss Heatmap Across Batch Size Configurations and Epochs")
 plt.yticks([0, 1, 2, 3], ['Batch Size 64', 'Batch Size 128', 'Batch Size 256', 'Batch Size 1000'])
-plt.savefig('Figures/task1.4/Shallow Network/Training_Loss_Heatmap.png')
+plt.savefig('Figures/task1.4/Deep Network/Training_Loss_Heatmap.png')
 plt.show()
