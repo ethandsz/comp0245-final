@@ -10,8 +10,9 @@ import matplotlib.pyplot as plt
 
 # Set the visualization flag
 visualize = True  # Set to True to enable visualization, False to disable
-training_flag = True  # Set to True to train the models, False to skip training
-test_cartesian_accuracy_flag = True  # Set to True to test the model with a new goal position, False to skip testing
+training_flag = False  # Set to True to train the models, False to skip training
+retraining_flag = False # Set to True to retrain the models, False to skip retraining
+test_cartesian_accuracy_flag = True      # Set to True to test the model with a new goal position, False to skip testing
 
 # MLP Model Definition
 class JointAngleRegressor(nn.Module):
@@ -109,13 +110,16 @@ if training_flag:
         epochs = 500
         learning_rate = 0.01
 
+        # Dictionary to store training and test losses for each joint
+        all_losses = {joint_idx: {'train_losses': [], 'test_losses': []} for joint_idx in range(7)}
+
         for joint_idx in range(7):
 
             # The name of the saved model
             model_filename = os.path.join(script_dir, f'neuralq{joint_idx+1}.pt')
 
             # If the save model file exists, assume it's been trained already and skip training it
-            if os.path.isfile(model_filename):
+            if os.path.isfile(model_filename) and not retraining_flag:
                 print(f"File {model_filename} exists; assume trained already")
                 continue
 
@@ -166,6 +170,10 @@ if training_flag:
             # Final evaluation on test set
             print(f'Final Test Loss for Joint {joint_idx+1}: {test_losses[-1]:.6f}')
 
+            # Store the training and test losses in the dictionary
+            all_losses[joint_idx]['train_losses'] = train_losses
+            all_losses[joint_idx]['test_losses'] = test_losses
+
             # Save the trained model
             model_filename = os.path.join(script_dir, f'neuralq{joint_idx+1}.pt')
             torch.save(model.state_dict(), model_filename)
@@ -184,7 +192,7 @@ if training_flag:
                 plt.title(f'Loss Curve for Joint {joint_idx+1}')
                 plt.legend()
                 plt.grid(True)
-                plt.show()
+                # plt.show()
 
                 # Plot true vs predicted positions on the test set
                 model.eval()
@@ -210,9 +218,96 @@ if training_flag:
                 plt.title(f'Joint {joint_idx+1} Position Prediction on Test Set')
                 plt.legend()
                 plt.grid(True)
-                plt.show()
+                # plt.show()
+
+        if not retraining_flag:
+            with open('all_losses_og.pkl', 'rb') as f:
+                all_losses = pickle.load(f)
+        
+        # Print or save the collected losses for each joint
+        print("\nCollected Training and Test Losses:")
+        for joint_idx in range(7):
+            print(f"\nJoint {joint_idx+1} Training Losses: {all_losses[joint_idx]['train_losses'][-1]}")
+            print(f"Joint {joint_idx+1} Test Losses: {all_losses[joint_idx]['test_losses'][-1]}")
+
+        # Optionally, save all_losses to a file for further analysis or report
+        with open("all_losses.pkl", "wb") as f:
+            pickle.dump(all_losses, f)
+            print("Training and test losses saved to 'all_losses.pkl'.")
+
+        # Set up the figure and axis grid
+        fig, axs = plt.subplots(2, 4, figsize=(20, 10))  # 2 rows, 4 columns (last plot can be empty)
+        fig.suptitle("Training and Test Loss curve for Each Joint")
+
+        # Plot training and test losses for each joint in a separate subplot
+        for joint_idx in range(7):
+            row = joint_idx // 4
+            col = joint_idx % 4
+            axs[row, col].plot(all_losses[joint_idx]['train_losses'], label="Train Loss", color="blue")
+            axs[row, col].plot(all_losses[joint_idx]['test_losses'], label="Test Loss", color="orange")
+            axs[row, col].set_title(f"Joint {joint_idx+1}")
+            axs[row, col].set_xlabel("Epoch")
+            axs[row, col].set_ylabel("Loss")
+            axs[row, col].legend()
+
+        # Hide the empty subplot (8th subplot if we only have 7 joints)
+        axs[1, 3].axis("off")
+
+        # Adjust layout to avoid overlap
+        # plt.tight_layout(rect=[0, 0.03, 1, 0.95])  # Adjust for the title space
+        plt.tight_layout()  # Adjust for the title space
+        plt.savefig("loss_curve.png")
+        # plt.show()
 
         print("Training and visualization completed.")
+
+        # Set up the figure for true vs. predicted positions
+        fig, axs = plt.subplots(4, 2, figsize=(14, 12))  # 4 rows, 2 columns (one extra plot will be empty)
+        fig.suptitle("True vs. Predicted Joint Positions for Each Joint")
+
+        for joint_idx in range(7):
+            # Load the model for each joint and switch to evaluation mode
+            model_filename = os.path.join(script_dir, f'neuralq{joint_idx+1}.pt')
+            model = JointAngleRegressor()
+            model.load_state_dict(torch.load(model_filename))
+            model.eval()
+
+            # Extract test data
+            x_test_time = x_test_list[joint_idx]
+            y_test = y_test_list[joint_idx]
+            goal_test = goal_test_list[joint_idx]
+
+            # Prepare input for model
+            x_test = np.hstack((x_test_time.reshape(-1, 1), goal_test))
+            x_test_tensor = torch.from_numpy(x_test).float()
+
+            # Generate predictions
+            with torch.no_grad():
+                predictions = model(x_test_tensor).numpy().flatten()
+
+            # Sort for better plotting
+            sorted_indices = np.argsort(x_test_time)
+            x_test_time_sorted = x_test_time[sorted_indices]
+            y_test_sorted = y_test[sorted_indices]
+            predictions_sorted = predictions[sorted_indices]
+
+            # Select subplot position
+            ax = axs[joint_idx // 2, joint_idx % 2]
+            ax.plot(x_test_time_sorted, y_test_sorted, label='True Joint Positions')
+            ax.plot(x_test_time_sorted, predictions_sorted, label='Predicted Joint Positions', linestyle='--')
+            ax.set_title(f'Joint {joint_idx+1}')
+            ax.set_xlabel('Time (s)')
+            ax.set_ylabel('Position (rad)')
+            ax.legend()
+            ax.grid(True)
+
+        # Hide the last empty subplot (since we have 7 plots)
+        axs[3, 1].axis('off')
+
+        # plt.tight_layout(rect=[0, 0.03, 1, 0.95])
+        plt.tight_layout()
+        plt.savefig("prediction.png")
+        plt.show()
 
 if test_cartesian_accuracy_flag:
 
@@ -256,12 +351,14 @@ if test_cartesian_accuracy_flag:
         model.eval()
         models.append(model)
 
+    
     # Generate a new goal position
     goal_position_bounds = {
         'x': (0.6, 0.8),
         'y': (-0.1, 0.1),
         'z': (0.12, 0.12)
     }
+
     # create a set of goal positions 
     number_of_goal_positions_to_test = 10
     goal_positions = []
@@ -299,80 +396,134 @@ if test_cartesian_accuracy_flag:
     init_cartesian_pos, init_R = dyn_model.ComputeFK(init_joint_angles, controlled_frame_name)
     print(f"Initial joint angles: {init_joint_angles}")
 
+    # Store MSE from target
+    squared_errors = []
 
-    for goal_position in goal_positions:
-        print("Testing new goal position------------------------------------")
+    # Specify the output file path
+    output_file = os.path.join(script_dir, 'task2.1/archive/goal_position_errors.txt')
+    # Open the file in write mode
+    with open(output_file, 'w') as file:
+        file.write(f"Initial joint angles: {init_joint_angles}\n\n")
 
-        # Create test input features
-        test_goal_positions = np.tile(goal_position, (len(test_time_array), 1))  # Shape: (100, 3)
-        test_input = np.hstack((test_time_array.reshape(-1, 1), test_goal_positions))  # Shape: (100, 4)
+        for i, goal_position in enumerate(goal_positions):
+            print(f"Testing new goal position------------------------------------")
 
-        # Predict joint positions for the new goal position
-        predicted_joint_positions_over_time = np.zeros((len(test_time_array), 7))  # Shape: (num_points, 7)
+            # Create test input features
+            test_goal_positions = np.tile(goal_position, (len(test_time_array), 1))  # Shape: (100, 3)
+            test_input = np.hstack((test_time_array.reshape(-1, 1), test_goal_positions))  # Shape: (100, 4)
 
-        for joint_idx in range(7):
-            # Instantiate the model
-            #model = MLP()
-            # Load the saved model
-            #model_filename = os.path.join(script_dir, f'neuralq{joint_idx+1}.pt')
-            #model.load_state_dict(torch.load(model_filename))
-            #model.eval()
+            # Predict joint positions for the new goal position
+            predicted_joint_positions_over_time = np.zeros((len(test_time_array), 7))  # Shape: (num_points, 7)
 
-            # Prepare the test input
-            test_input_tensor = torch.from_numpy(test_input).float()  # Shape: (num_points, 4)
+            for joint_idx in range(7):
+                # Instantiate the model
+                #model = MLP()
+                # Load the saved model
+                #model_filename = os.path.join(script_dir, f'neuralq{joint_idx+1}.pt')
+                #model.load_state_dict(torch.load(model_filename))
+                #model.eval()
 
-            # Predict joint positions
-            with torch.no_grad():
-                predictions = models[joint_idx](test_input_tensor).numpy().flatten()  # Shape: (num_points,)
+                # Prepare the test input
+                test_input_tensor = torch.from_numpy(test_input).float()  # Shape: (num_points, 4)
 
-            # Store the predicted joint positions
-            predicted_joint_positions_over_time[:, joint_idx] = predictions
+                # Predict joint positions
+                with torch.no_grad():
+                    predictions = models[joint_idx](test_input_tensor).numpy().flatten()  # Shape: (num_points,)
 
-        # Get the final predicted joint positions (at the last time step)
-        final_predicted_joint_positions = predicted_joint_positions_over_time[-1, :]  # Shape: (7,)
+                # Store the predicted joint positions
+                predicted_joint_positions_over_time[:, joint_idx] = predictions
 
-        # Compute forward kinematics
-        final_cartesian_pos, final_R = dyn_model.ComputeFK(final_predicted_joint_positions, controlled_frame_name)
+            # Get the final predicted joint positions (at the last time step)
+            final_predicted_joint_positions = predicted_joint_positions_over_time[-1, :]  # Shape: (7,)
 
-        print(f"Goal position: {goal_position}")
-        print(f"Computed cartesian position: {final_cartesian_pos}")
-        print(f"Predicted joint positions at final time step: {final_predicted_joint_positions}")
-        
-        # Compute position error
-        position_error = np.linalg.norm(final_cartesian_pos - goal_position)
-        print(f"Position error between computed position and goal: {position_error}")
+            # Compute forward kinematics
+            final_cartesian_pos, final_R = dyn_model.ComputeFK(final_predicted_joint_positions, controlled_frame_name)
 
-        # Optional: Visualize the cartesian trajectory over time
-        if visualize:
-            cartesian_positions_over_time = []
-            for i in range(len(test_time_array)):
-                joint_positions = predicted_joint_positions_over_time[i, :]
-                cartesian_pos, _ = dyn_model.ComputeFK(joint_positions, controlled_frame_name)
-                cartesian_positions_over_time.append(cartesian_pos.copy())
+            print(f"Goal position: {goal_position}")
+            print(f"Computed cartesian position: {final_cartesian_pos}")
+            print(f"Predicted joint positions at final time step: {final_predicted_joint_positions}")
+            
+            # Compute position error
+            position_error = np.linalg.norm(final_cartesian_pos - goal_position)
+            squared_errors.append(position_error**2)  # Add squared error to the list for MSE computation
+            print(f"Position error between computed position and goal: {position_error}")
 
-            cartesian_positions_over_time = np.array(cartesian_positions_over_time)  # Shape: (num_points, 3)
+            # Write each goal position, computed position, and error to the file
+            file.write(f"Goal Position {i+1}: {goal_position}\n")
+            file.write(f"Computed Position: {final_cartesian_pos}\n")
+            file.write(f"Position Error: {position_error}\n")
+            file.write(f"Predicted joint positions at final time step: {final_predicted_joint_positions}\n\n")
 
-            # Plot x, y, z positions over time
-            plt.figure(figsize=(10, 5))
-            plt.plot(test_time_array, cartesian_positions_over_time[:, 0], label='X Position')
-            plt.plot(test_time_array, cartesian_positions_over_time[:, 1], label='Y Position')
-            plt.plot(test_time_array, cartesian_positions_over_time[:, 2], label='Z Position')
-            plt.xlabel('Time (s)')
-            plt.ylabel('Cartesian Position (m)')
-            plt.title('Predicted Cartesian Positions Over Time')
-            plt.legend()
-            plt.grid(True)
-            plt.show()
+            # Optional: Visualize the cartesian trajectory over time
+            if visualize:
+                cartesian_positions_over_time = []
+                for j in range(len(test_time_array)):
+                    joint_positions = predicted_joint_positions_over_time[j, :]
+                    cartesian_pos, _ = dyn_model.ComputeFK(joint_positions, controlled_frame_name)
+                    cartesian_positions_over_time.append(cartesian_pos.copy())
 
-            # Plot the trajectory in 3D space
-            from mpl_toolkits.mplot3d import Axes3D
-            fig = plt.figure()
-            ax = fig.add_subplot(111, projection='3d')
-            ax.plot(cartesian_positions_over_time[:, 0], cartesian_positions_over_time[:, 1], cartesian_positions_over_time[:, 2], label='Predicted Trajectory')
-            ax.scatter(goal_position[0], goal_position[1], goal_position[2], color='red', label='Goal Position')
-            ax.set_xlabel('X Position (m)')
-            ax.set_ylabel('Y Position (m)')
-            ax.set_zlabel('Z Position (m)')
-            ax.set_title('Predicted Cartesian Trajectory')
-            plt.legend()
-            plt.show()
+                cartesian_positions_over_time = np.array(cartesian_positions_over_time)  # Shape: (num_points, 3)
+
+                # Plot x, y, z positions over time
+                plt.figure(figsize=(10, 5))
+                plt.plot(test_time_array, cartesian_positions_over_time[:, 0], label='X Position')
+                plt.plot(test_time_array, cartesian_positions_over_time[:, 1], label='Y Position')
+                plt.plot(test_time_array, cartesian_positions_over_time[:, 2], label='Z Position')
+                plt.xlabel('Time (s)')
+                plt.ylabel('Cartesian Position (m)')
+                plt.title('Predicted Cartesian Positions Over Time')
+                plt.legend()
+                plt.grid(True)
+                plt.tight_layout()
+                plt.savefig(f"task2.1/archive/2d_graph_Goal_{i+1}.png")
+                plt.show()
+
+                # Plot the trajectory in 3D space
+                from mpl_toolkits.mplot3d import Axes3D
+                fig = plt.figure()
+                ax = fig.add_subplot(111, projection='3d')
+                ax.plot(cartesian_positions_over_time[:, 0], cartesian_positions_over_time[:, 1], cartesian_positions_over_time[:, 2], label='Predicted Trajectory')
+                ax.scatter(goal_position[0], goal_position[1], goal_position[2], color='red', label=f'Goal: ({goal_position[0]:.3f}, {goal_position[1]:.3f}, {goal_position[2]:.3f})')
+                # ax.text(goal_position[0], goal_position[1], goal_position[2], f"Goal: ({goal_position[0]:.3f}, {goal_position[1]:.3f}, {goal_position[2]:.3f})", color='red')
+                # Plot the endpoint in green
+                endpoint_position = cartesian_positions_over_time[-1]  # Last position in the predicted trajectory
+                ax.scatter(endpoint_position[0], endpoint_position[1], endpoint_position[2], color='green', label=f'End:  ({endpoint_position[0]:.3f}, {endpoint_position[1]:.3f}, {endpoint_position[2]:.3f})')
+                # ax.text(endpoint_position[0], endpoint_position[1], endpoint_position[2], f"End: ({endpoint_position[0]:.3f}, {endpoint_position[1]:.3f}, {endpoint_position[2]:.3f})", color='green')
+                ax.set_xlabel('X Position (m)')
+                ax.set_ylabel('Y Position (m)')
+                ax.set_zlabel('Z Position (m)')
+                # ax.set_title('Predicted Cartesian Trajectory')
+                ax.set_title(f'Predicted Cartesian Trajectory\nPosition Error: {position_error:.3f} (m)')
+                plt.legend(loc='upper right')
+                plt.tight_layout()
+                plt.savefig(f"task2.1/archive/trajectory_goal_{i+1}.png")
+                plt.show()
+
+        # Calculate Mean Squared Error
+        mse = np.mean(squared_errors)
+        print(f"\nMean Squared Error (MSE) from target positions: {mse}")        
+        # Write the MSE to the file
+        file.write(f"Mean Squared Error (MSE) from target positions: {mse}\n\n")
+
+
+    print(f"Results saved to {output_file}")
+
+    # Calculate and store position errors for each goal position
+    position_errors = [np.sqrt(error) for error in squared_errors]
+    position_errors_square = [error for error in squared_errors]
+
+    # Plot position errors
+    plt.figure(figsize=(10, 5))
+    plt.plot(range(1, number_of_goal_positions_to_test + 1), position_errors, marker='o', linestyle='-', label='Position Error (m)')
+    plt.plot(range(1, number_of_goal_positions_to_test + 1), position_errors_square, marker='.', linestyle='--', label='Position Error Squared (m²)')
+    plt.xlabel('Goal Position Index')
+    plt.ylabel('Error (m)')
+    # plt.title('Position Error for Each Goal Position')
+    plt.title(f'Position and Squared Errors for Each Goal Position (Total: {number_of_goal_positions_to_test} Goals)')
+    plt.grid(True)
+    plt.legend()
+    plt.tight_layout()
+    plt.savefig(f"task2.1/archive/generalization_error_{number_of_goal_positions_to_test}_goalpoints.png")
+    plt.show()
+
+
