@@ -17,7 +17,7 @@ import pandas as pd
 
 # Set the model type: "neural_network" or "random_forest"
 neural_network_or_random_forest = "random_forest"  # Change to "random_forest" to use Random Forest models
-depth = 2
+depth = 10
 
 # MLP Model Definition
 class MLP(nn.Module):
@@ -107,7 +107,7 @@ def main():
         'z': (0.12, 0.12)
     }
     # Create a set of goal positions
-    number_of_goal_positions_to_test = 5
+    number_of_goal_positions_to_test = 1
     goal_positions = []
     for i in range(number_of_goal_positions_to_test):
         goal_positions.append([
@@ -229,7 +229,9 @@ def main():
                 
                 # Clip the joint velocities to the joint limits
                 qd_des_over_time_clipped = np.clip(qd_des_over_time, -np.array(joint_vel_limits), np.array(joint_vel_limits))
-            
+                plot_velocities(test_time_array, qd_des_over_time_clipped, original_qd_des, smoothing_test, test_num)
+
+
             elif smoothing_test == "Gaussian Filter":
                 predicted_joint_positions_gaussian = np.zeros_like(predicted_joint_positions_over_time)
                 for joint_idx in range(7):
